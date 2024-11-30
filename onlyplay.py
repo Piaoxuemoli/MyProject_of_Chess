@@ -12,7 +12,10 @@ import time
 
 config = 8
 def run():
-    model_file = 'dist/current_policy.model'  #模型文件路径
+    a='dist/current_policy.model'
+    b='dist/current_policy_step.model'
+    c='dist/best_policy.model'
+    model_file = b  #模型文件路径
     try:
         board = Board()  # 初始化棋盘
         game = Game_UI(board, is_shown=1)  # 创建游戏对象

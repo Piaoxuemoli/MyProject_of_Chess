@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>1eb801b9-6e81-47fa-bba1-b9e90de9d0f8</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>onlyplay.py</StartupFile>
+    <StartupFile>visualize.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -27,6 +27,7 @@
     <Compile Include="network.py" />
     <Compile Include="onlyplay.py" />
     <Compile Include="train.py" />
+    <Compile Include="visualize.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

@@ -109,7 +109,7 @@ class network_MCTS_Player:
                 #自我训练时添加狄利克雷噪声，以提高探索性
                 move = np.random.choice(
                     acts,
-                    p=0.75*probs + 0.25*np.random.dirichlet(0.3*np.ones(len(probs)))
+                    p=0.85*probs + 0.15*np.random.dirichlet(0.3*np.ones(len(probs)))
                 )
                 #更新根节点
                 self.mcts.up_date(move)

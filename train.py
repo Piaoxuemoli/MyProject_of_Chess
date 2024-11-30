@@ -8,8 +8,19 @@ from mcts_mine import m_Player,MCTS
 from mcts_policy_value import network_MCTS_Player
 from network import PolicyValueNet
 import paddle
+import csv
 
 config=8
+
+def append_loss_to_csv(epoch, loss):
+    with open('losses.csv', 'a', newline='') as file:
+        writer = csv.writer(file)
+        # 检查文件是否为空，如果为空则写入表头
+        is_empty = file.tell() == 0
+        if is_empty:
+            writer.writerow(['epoch', 'loss'])
+        # 写入新的数据行
+        writer.writerow([epoch + 1, loss])
 
 class Train():
     def __init__(self, init_model=None, is_shown = 0):
@@ -21,21 +32,20 @@ class Train():
         self.game = Game_UI(self.board, is_shown)
         # 训练参数
         self.learn_rate = 2e-3
-        self.lr_multiplier = 1.0  # 基于KL自适应地调整学习率
-        self.temp = 1.0  # 临时变量
-        self.n_playout = 800  # 每次移动的模拟次数
+        self.lr_multiplier = 1.0  #基于KL散度自适应地调整学习率
+        self.temp = 0.8  #探索率温度控制
+        self.n_playout = 600  #每次移动的模拟次数
         self.c_puct = 5
-        self.buffer_size = 12000  #经验池大小10000
+        self.buffer_size = 12000  #经验池
         self.batch_size = 512  #训练的mini-batch大小
         self.data_buffer = deque(maxlen=self.buffer_size)
         self.play_batch_size = 1
-        self.epochs = 5  # 每次更新的train_steps数量
+        self.epochs = 5  #每次更新的train_steps数量
         self.kl_targ = 0.02
-        self.check_freq = 400  #评估模型的频率，可以设置大一些比如500
-        self.game_batch_num = 1600
+        self.check_freq = 400  #评估模型的频率
+        self.game_batch_num = 800  #训练总轮次
         self.best_win_ratio = 0.0
-        #于纯粹的mcts的模拟数量，用作评估训练策略的对手
-        self.fake_mcts_limit= 1000
+        self.fake_mcts_limit= 3000  #纯粹的mcts的模拟，用作评估训练策略的对手
         if init_model:
             #从初始的策略价值网开始训练
             self.policy_value_net = PolicyValueNet(self.board_width,
@@ -98,6 +108,7 @@ class Train():
                 mcts_probs_batch,
                 winner_batch,
                 self.learn_rate * self.lr_multiplier)
+            
             new_probs, new_v = self.policy_value_net.policy_value(state_batch)
             kl = np.mean(np.sum(old_probs * (
                 np.log(old_probs + 1e-10) - np.log(new_probs + 1e-10)),
@@ -119,19 +130,15 @@ class Train():
                              np.var(np.array(winner_batch)))
         print(("kl:{:.5f},"
                "lr_multiplier:{:.3f},"
-               "loss:{},"
-               "entropy:{},"
                "explained_var_old:{:.3f},"
                "explained_var_new:{:.3f}"
                ).format(kl,
                         self.lr_multiplier,
-                        loss,
-                        entropy,
                         explained_var_old,
                         explained_var_new))
         return loss, entropy
 
-    def policy_evaluate(self, n_games=8):
+    def policy_evaluate(self, n_games=10):
         #与纯蒙特卡洛对抗来监控网络的性能
         current_mcts_player = network_MCTS_Player(self.policy_value_net.policy_value_fn,
                                          c_puct=self.c_puct,
@@ -169,6 +176,7 @@ class Train():
                     i + 1, self.episode_len))
                 if len(self.data_buffer) > self.batch_size:
                     loss, entropy = self.policy_update()
+                    append_loss_to_csv(i, loss)
                     print("loss :{}, entropy:{}".format(loss, entropy))
                 if (i + 1) % 50 == 0:
                     self.policy_value_net.save_model(os.path.join(dst_path, 'current_policy_step.model'))
